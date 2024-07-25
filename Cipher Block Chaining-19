@@ -1,0 +1,98 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef unsigned char byte;
+
+void XOR(byte *a, byte *b, byte *out, int len) {
+    for (int i = 0; i < len; i++) {
+        out[i] = a[i] ^ b[i];
+    }
+}
+
+// Placeholder for DES encryption function
+void DES_EncryptBlock(byte *in, byte *key, byte *out) {
+    // Implement DES encryption here or call an existing DES encryption function
+    // This is a placeholder and doesn't perform actual encryption
+    memcpy(out, in, 8);
+}
+
+// Placeholder for DES decryption function
+void DES_DecryptBlock(byte *in, byte *key, byte *out) {
+    // Implement DES decryption here or call an existing DES decryption function
+    // This is a placeholder and doesn't perform actual decryption
+    memcpy(out, in, 8);
+}
+
+void TripleDES_EncryptBlock(byte *in, byte *key, byte *out) {
+    byte temp[8];
+
+    // 3DES: Encrypt with key1, Decrypt with key2, Encrypt with key3
+    DES_EncryptBlock(in, key, temp);
+    DES_DecryptBlock(temp, key + 8, temp);
+    DES_EncryptBlock(temp, key + 16, out);
+}
+
+void TripleDES_DecryptBlock(byte *in, byte *key, byte *out) {
+    byte temp[8];
+
+    // 3DES: Decrypt with key3, Encrypt with key2, Decrypt with key1
+    DES_DecryptBlock(in, key + 16, temp);
+    DES_EncryptBlock(temp, key + 8, temp);
+    DES_DecryptBlock(temp, key, out);
+}
+
+void TripleDES_Encrypt(byte *plaintext, byte *key, byte *iv, byte *ciphertext, int len) {
+    byte block[8], temp[8];
+    memcpy(temp, iv, 8);
+
+    for (int i = 0; i < len; i += 8) {
+        XOR(plaintext + i, temp, block, 8);
+        TripleDES_EncryptBlock(block, key, ciphertext + i);
+        memcpy(temp, ciphertext + i, 8);
+    }
+}
+
+void TripleDES_Decrypt(byte *ciphertext, byte *key, byte *iv, byte *plaintext, int len) {
+    byte block[8], temp[8], prev[8];
+    memcpy(prev, iv, 8);
+
+    for (int i = 0; i < len; i += 8) {
+        TripleDES_DecryptBlock(ciphertext + i, key, block);
+        XOR(block, prev, plaintext + i, 8);
+        memcpy(prev, ciphertext + i, 8);
+    }
+}
+
+void print_hex(byte *data, int len) {
+    for (int i = 0; i < len; i++) {
+        printf("%02x", data[i]);
+    }
+    printf("\n");
+}
+
+int main() {
+    byte key[24] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+                    0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10,
+                    0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67};
+    byte iv[8] = {0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef};
+    byte plaintext[16] = "Hello, World!";
+    byte ciphertext[16];
+    byte decryptedtext[16];
+
+    printf("Plaintext: %s\n", plaintext);
+
+    TripleDES_Encrypt(plaintext, key, iv, ciphertext, 16);
+    printf("Ciphertext: ");
+    print_hex(ciphertext, 16);
+
+    TripleDES_Decrypt(ciphertext, key, iv, decryptedtext, 16);
+    decryptedtext[15] = '\0'; // Null-terminate the decrypted string
+    printf("Decrypted text: %s\n", decryptedtext);
+
+    return 0;
+}
+Output:
+Plaintext: Hello, World!
+Ciphertext: 5a513a14ff87edb835235670de87edb8
+Decrypted text: Hello, World!
