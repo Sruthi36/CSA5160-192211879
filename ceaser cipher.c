@@ -28,3 +28,7 @@ int main(){
 	return 0;
 	
 }
+Output:
+Enter text:abc
+Enter key number:1
+Encrypted text:bcd
