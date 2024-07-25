@@ -27,3 +27,7 @@ char monocipher_encr(char a) {
     }
     return alpha[i][1];
 }
+Output:
+Enter String..abc efg
+Before Decryption..abc efg
+After Decryption..fag
