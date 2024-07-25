@@ -1,0 +1,140 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+typedef unsigned char byte;
+
+void xorOperation(byte *data, byte *key, int block_size) {
+    for (int i = 0; i < block_size; ++i) {
+        data[i] ^= key[i];
+    }
+}
+
+// Padding function
+void pad(byte *data, int *len, int block_size) {
+    int pad_len = block_size - (*len % block_size);
+    for (int i = *len; i < *len + pad_len; ++i) {
+        data[i] = (i == *len) ? 0x80 : 0x00;
+    }
+    *len += pad_len;
+}
+
+// ECB mode
+void encryptECB(byte *data, byte *key, int len, int block_size) {
+    for (int i = 0; i < len; i += block_size) {
+        xorOperation(data + i, key, block_size);
+    }
+}
+
+void decryptECB(byte *data, byte *key, int len, int block_size) {
+    encryptECB(data, key, len, block_size); // XOR-based encryption is symmetric
+}
+
+// CBC mode
+void encryptCBC(byte *data, byte *key, byte *iv, int len, int block_size) {
+    byte prev[block_size];
+    memcpy(prev, iv, block_size);
+
+    for (int i = 0; i < len; i += block_size) {
+        xorOperation(data + i, prev, block_size);
+        xorOperation(data + i, key, block_size);
+        memcpy(prev, data + i, block_size);
+    }
+}
+
+void decryptCBC(byte *data, byte *key, byte *iv, int len, int block_size) {
+    byte prev[block_size], curr[block_size];
+    memcpy(prev, iv, block_size);
+
+    for (int i = 0; i < len; i += block_size) {
+        memcpy(curr, data + i, block_size);
+        xorOperation(data + i, key, block_size);
+        xorOperation(data + i, prev, block_size);
+        memcpy(prev, curr, block_size);
+    }
+}
+
+// CFB mode
+void encryptCFB(byte *data, byte *key, byte *iv, int len, int block_size) {
+    byte prev[block_size];
+    memcpy(prev, iv, block_size);
+
+    for (int i = 0; i < len; i += block_size) {
+        xorOperation(prev, key, block_size);
+        xorOperation(data + i, prev, block_size);
+        memcpy(prev, data + i, block_size);
+    }
+}
+
+void decryptCFB(byte *data, byte *key, byte *iv, int len, int block_size) {
+    byte prev[block_size], curr[block_size];
+    memcpy(prev, iv, block_size);
+
+    for (int i = 0; i < len; i += block_size) {
+        memcpy(curr, data + i, block_size);
+        xorOperation(prev, key, block_size);
+        xorOperation(data + i, prev, block_size);
+        memcpy(prev, curr, block_size);
+    }
+}
+
+void print_hex(byte *data, int len) {
+    for (int i = 0; i < len; i++) {
+        printf("%02x", data[i]);
+    }
+    printf("\n");
+}
+
+int main() {
+    byte key[] = "SIMPLEKEY";
+    byte iv[] = "INITVECT";
+    byte plaintext[] = "HELLOPLAINTEXT";
+    int block_size = 8;
+    int len = strlen((char *)plaintext);
+
+    byte padded_data[32];
+    memcpy(padded_data, plaintext, len);
+    pad(padded_data, &len, block_size);
+
+    printf("Original plaintext: %s\n", plaintext);
+    printf("Padded plaintext: ");
+    print_hex(padded_data, len);
+
+    // ECB Mode
+    byte ecb_data[32];
+    memcpy(ecb_data, padded_data, len);
+    encryptECB(ecb_data, key, len, block_size);
+    printf("Encrypted ECB: ");
+    print_hex(ecb_data, len);
+    decryptECB(ecb_data, key, len, block_size);
+    printf("Decrypted ECB: %s\n", ecb_data);
+
+    // CBC Mode
+    byte cbc_data[32];
+    memcpy(cbc_data, padded_data, len);
+    encryptCBC(cbc_data, key, iv, len, block_size);
+    printf("Encrypted CBC: ");
+    print_hex(cbc_data, len);
+    decryptCBC(cbc_data, key, iv, len, block_size);
+    printf("Decrypted CBC: %s\n", cbc_data);
+
+    // CFB Mode
+    byte cfb_data[32];
+    memcpy(cfb_data, padded_data, len);
+    encryptCFB(cfb_data, key, iv, len, block_size);
+    printf("Encrypted CFB: ");
+    print_hex(cfb_data, len);
+    decryptCFB(cfb_data, key, iv, len, block_size);
+    printf("Decrypted CFB: %s\n", cfb_data);
+
+    return 0;
+}
+Output:
+Original plaintext: HELLOPLAINTEXT
+Padded plaintext: 48454c4c4f504c41494e544558548000
+Encrypted ECB: 1b0c011c031507041a0719151411cb45
+Decrypted ECB: HELLOPLAINTEXTÇ
+Encrypted CBC: 52424848555044504845515d41418f15
+Decrypted CBC: HELLOPLAINTEXTÇ
+Encrypted CFB: 52424848555044504845515d41418f15
+Decrypted CFB: HELLOPLAINTEXTÇ
