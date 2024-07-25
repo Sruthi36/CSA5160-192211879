@@ -1,0 +1,83 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+double frequencies[26] = {
+    0.08167, 0.01492, 0.02782, 0.04253, 0.12702, 0.02228, 0.02015, 
+    0.06094, 0.06966, 0.00153, 0.00772, 0.04025, 0.02406, 0.06749, 
+    0.07507, 0.01929, 0.00095, 0.05987, 0.06327, 0.09056, 0.02758, 
+    0.00978, 0.02360, 0.00150, 0.01974, 0.00074                     
+};
+void decrypt(char *ciphertext, int shift) {
+    int len = strlen(ciphertext);
+    for (int i = 0; i < len; i++) {
+        if (isalpha(ciphertext[i])) {
+            if (isupper(ciphertext[i])) {
+                ciphertext[i] = ((ciphertext[i] - 'A' - shift + 26) % 26) + 'A';
+            } else {
+                ciphertext[i] = ((ciphertext[i] - 'a' - shift + 26) % 26) + 'a';
+            }
+        }
+    }
+}
+double calculateScore(char *plaintext) {
+    int count[26] = {0};
+    int len = strlen(plaintext);
+    for (int i = 0; i < len; i++) {
+        if (isalpha(plaintext[i])) {
+            count[tolower(plaintext[i]) - 'a']++;
+        }
+    }
+    double score = 0.0;
+    for (int i = 0; i < 26; i++) {
+        score += frequencies[i] * count[i];
+    }
+    return score;
+}
+
+int main() {
+    char ciphertext[] = "Uifsf jt b tfdsfu qmfbtf xbju";
+    int len = strlen(ciphertext);
+
+    printf("Ciphertext: %s\n\n", ciphertext);
+
+    printf("Possible Decryptions:\n");
+    for (int shift = 1; shift < 26; shift++) {
+        char plaintext[len + 1];
+        strcpy(plaintext, ciphertext);
+        decrypt(plaintext, shift);
+
+        printf("Shift: %d, Plaintext: %s\n", shift, plaintext);
+    }
+
+    return 0;
+}
+Output:
+Ciphertext: Uifsf jt b tfdsfu qmfbtf xbju
+
+Possible Decryptions:
+Shift: 1, Plaintext: There is a secret please wait
+Shift: 2, Plaintext: Sgdqd hr z rdbqds okdzrd vzhs
+Shift: 3, Plaintext: Rfcpc gq y qcapcr njcyqc uygr
+Shift: 4, Plaintext: Qebob fp x pbzobq mibxpb txfq
+Shift: 5, Plaintext: Pdana eo w oaynap lhawoa swep
+Shift: 6, Plaintext: Oczmz dn v nzxmzo kgzvnz rvdo
+Shift: 7, Plaintext: Nbyly cm u mywlyn jfyumy qucn
+Shift: 8, Plaintext: Maxkx bl t lxvkxm iextlx ptbm
+Shift: 9, Plaintext: Lzwjw ak s kwujwl hdwskw osal
+Shift: 10, Plaintext: Kyviv zj r jvtivk gcvrjv nrzk
+Shift: 11, Plaintext: Jxuhu yi q iushuj fbuqiu mqyj
+Shift: 12, Plaintext: Iwtgt xh p htrgti eatpht lpxi
+Shift: 13, Plaintext: Hvsfs wg o gsqfsh dzsogs kowh
+Shift: 14, Plaintext: Gurer vf n frperg cyrnfr jnvg
+Shift: 15, Plaintext: Ftqdq ue m eqodqf bxqmeq imuf
+Shift: 16, Plaintext: Espcp td l dpncpe awpldp hlte
+Shift: 17, Plaintext: Drobo sc k combod zvokco gksd
+Shift: 18, Plaintext: Cqnan rb j bnlanc yunjbn fjrc
+Shift: 19, Plaintext: Bpmzm qa i amkzmb xtmiam eiqb
+Shift: 20, Plaintext: Aolyl pz h zljyla wslhzl dhpa
+Shift: 21, Plaintext: Znkxk oy g ykixkz vrkgyk cgoz
+Shift: 22, Plaintext: Ymjwj nx f xjhwjy uqjfxj bfny
+Shift: 23, Plaintext: Xlivi mw e wigvix tpiewi aemx
+Shift: 24, Plaintext: Wkhuh lv d vhfuhw sohdvh zdlw
+Shift: 25, Plaintext: Vjgtg ku c ugetgv rngcug yckv
