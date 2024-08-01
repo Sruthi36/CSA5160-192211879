@@ -1,0 +1,107 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+
+// Simulated prime numbers and parameters for DSA (in reality, these should be large prime numbers)
+#define P 23
+#define Q 11
+#define G 4
+
+int mod_mult(int a, int b, int c) {
+    return (a * b) % c;
+}
+
+int mod_exp(int a, int b, int c) {
+    int result = 1;
+    a = a % c;
+    while (b > 0) {
+        if (b % 2 == 1) {
+            result = (result * a) % c;
+        }
+        b = b >> 1;
+        a = (a * a) % c;
+    }
+    return result;
+}
+
+int mod_inverse(int a, int m) {
+    for (int x = 1; x < m; x++) {
+        if ((a * x) % m == 1) {
+            return x;
+        }
+    }
+    return -1; // No inverse
+}
+
+void generate_keys(int *x, int *y) {
+    *x = rand() % Q; // Private key x
+    *y = mod_exp(G, *x, P); // Public key y
+}
+
+void sign_message(int message, int x, int *r, int *s) {
+    int k;
+    do {
+        k = rand() % Q; // Random value k
+        *r = mod_exp(G, k, P) % Q; // r = (g^k mod p) mod q
+    } while (*r == 0);
+
+    int k_inv = mod_inverse(k, Q);
+    *s = (k_inv * (message + x * (*r))) % Q; // s = k^-1 (H(m) + x * r) mod q
+}
+
+int verify_signature(int message, int r, int s, int y) {
+    if (r <= 0 || r >= Q || s <= 0 || s >= Q) {
+        return 0; // Invalid signature
+    }
+
+    int w = mod_inverse(s, Q);
+    int u1 = (message * w) % Q;
+    int u2 = (r * w) % Q;
+    int v = ((mod_exp(G, u1, P) * mod_exp(y, u2, P)) % P) % Q;
+
+    return v == r;
+}
+
+int main() {
+    srand(time(NULL));
+
+    int x, y;
+    generate_keys(&x, &y);
+
+    int message = 9; // Example message (in reality, this should be a hash of the actual message)
+
+    int r1, s1, r2, s2;
+    sign_message(message, x, &r1, &s1);
+    sign_message(message, x, &r2, &s2);
+
+    printf("Public key (y): %d\n", y);
+    printf("Private key (x): %d\n", x);
+    printf("Message: %d\n", message);
+
+    printf("Signature 1: r = %d, s = %d\n", r1, s1);
+    printf("Signature 2: r = %d, s = %d\n", r2, s2);
+
+    if (verify_signature(message, r1, s1, y)) {
+        printf("Signature 1 is valid.\n");
+    } else {
+        printf("Signature 1 is invalid.\n");
+    }
+
+    if (verify_signature(message, r2, s2, y)) {
+        printf("Signature 2 is valid.\n");
+    } else {
+        printf("Signature 2 is invalid.\n");
+    }
+
+    return 0;
+}
+Output
+Public key (y): 12
+Private key (x): 5
+Message: 9
+Signature 1: r = 2, s = 7
+Signature 2: r = 1, s = -3
+Signature 1 is valid.
+Signature 2 is invalid.
