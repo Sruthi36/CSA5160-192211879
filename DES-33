@@ -1,0 +1,116 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+
+#define BLOCK_SIZE 8  // 64 bits
+#define KEY_SIZE 8    // 64 bits (only 56 bits are used)
+
+void initial_permutation(uint8_t *block) {
+    // Simplified initial permutation (for demonstration purposes)
+    uint8_t temp[BLOCK_SIZE];
+    for (int i = 0; i < BLOCK_SIZE; ++i) {
+        temp[i] = block[BLOCK_SIZE - 1 - i];
+    }
+    memcpy(block, temp, BLOCK_SIZE);
+}
+
+void final_permutation(uint8_t *block) {
+    // Simplified final permutation (inverse of initial permutation)
+    uint8_t temp[BLOCK_SIZE];
+    for (int i = 0; i < BLOCK_SIZE; ++i) {
+        temp[i] = block[BLOCK_SIZE - 1 - i];
+    }
+    memcpy(block, temp, BLOCK_SIZE);
+}
+
+void xor_blocks(uint8_t *a, uint8_t *b, int len) {
+    for (int i = 0; i < len; ++i) {
+        a[i] ^= b[i];
+    }
+}
+
+void des_round(uint8_t *block, uint8_t *subkey) {
+    // Simplified DES round (for demonstration purposes)
+    uint8_t left[BLOCK_SIZE / 2], right[BLOCK_SIZE / 2];
+    memcpy(left, block, BLOCK_SIZE / 2);
+    memcpy(right, block + BLOCK_SIZE / 2, BLOCK_SIZE / 2);
+
+    // Expansion and substitution steps omitted for simplicity
+
+    xor_blocks(right, subkey, BLOCK_SIZE / 2); // Key mixing step
+
+    // Swap and concatenate left and right parts
+    memcpy(block, right, BLOCK_SIZE / 2);
+    memcpy(block + BLOCK_SIZE / 2, left, BLOCK_SIZE / 2);
+}
+
+void des_encrypt(uint8_t *plaintext, uint8_t *key, uint8_t *ciphertext) {
+    uint8_t block[BLOCK_SIZE];
+    uint8_t subkeys[16][BLOCK_SIZE / 2];  // 16 subkeys of 48 bits each (simplified to 32 bits for demonstration)
+
+    // Simplified key schedule (subkey generation)
+    for (int i = 0; i < 16; ++i) {
+        memcpy(subkeys[i], key, BLOCK_SIZE / 2);
+    }
+
+    memcpy(block, plaintext, BLOCK_SIZE);
+    initial_permutation(block);
+
+    for (int i = 0; i < 16; ++i) {
+        des_round(block, subkeys[i]);
+    }
+
+    final_permutation(block);
+    memcpy(ciphertext, block, BLOCK_SIZE);
+}
+
+void des_decrypt(uint8_t *ciphertext, uint8_t *key, uint8_t *plaintext) {
+    uint8_t block[BLOCK_SIZE];
+    uint8_t subkeys[16][BLOCK_SIZE / 2];  // 16 subkeys of 48 bits each (simplified to 32 bits for demonstration)
+
+    // Simplified key schedule (subkey generation)
+    for (int i = 0; i < 16; ++i) {
+        memcpy(subkeys[i], key, BLOCK_SIZE / 2);
+    }
+
+    memcpy(block, ciphertext, BLOCK_SIZE);
+    initial_permutation(block);
+
+    for (int i = 15; i >= 0; --i) {
+        des_round(block, subkeys[i]);
+    }
+
+    final_permutation(block);
+    memcpy(plaintext, block, BLOCK_SIZE);
+}
+
+void print_hex(uint8_t *data, int length) {
+    for (int i = 0; i < length; ++i) {
+        printf("%02X ", data[i]);
+    }
+    printf("\n");
+}
+
+int main() {
+    uint8_t plaintext[BLOCK_SIZE] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF};
+    uint8_t key[KEY_SIZE] = {0x13, 0x34, 0x57, 0x79, 0x9B, 0xBC, 0xDF, 0xF1};
+    uint8_t ciphertext[BLOCK_SIZE];
+    uint8_t decryptedtext[BLOCK_SIZE];
+
+    printf("Plaintext: ");
+    print_hex(plaintext, BLOCK_SIZE);
+
+    des_encrypt(plaintext, key, ciphertext);
+    printf("Ciphertext: ");
+    print_hex(ciphertext, BLOCK_SIZE);
+
+    des_decrypt(ciphertext, key, decryptedtext);
+    printf("Decrypted text: ");
+    print_hex(decryptedtext, BLOCK_SIZE);
+
+    return 0;
+}
+Output
+Plaintext: 01 23 45 67 89 AB CD EF
+Ciphertext: 01 23 45 67 89 AB CD EF
+Decrypted text: 01 23 45 67 89 AB CD EF
