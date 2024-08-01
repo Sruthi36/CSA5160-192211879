@@ -1,0 +1,88 @@
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+
+#define BLOCK_SIZE 16 // 128-bit block size
+
+// Constants for block sizes
+const uint8_t R_128[BLOCK_SIZE] = {
+    0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+// Placeholder for a block cipher encryption function (e.g., AES encryption)
+void block_cipher_encrypt(const uint8_t *key, const uint8_t *input, uint8_t *output) {
+    // This is a placeholder function. In practice, you would use a proper AES library.
+    // For this example, we'll simply copy the input to the output.
+    memcpy(output, input, BLOCK_SIZE);
+}
+
+// Left shift operation on a block
+void left_shift_block(uint8_t *block, size_t block_size) {
+    uint8_t overflow = 0;
+    for (int i = block_size - 1; i >= 0; i--) {
+        uint8_t new_overflow = (block[i] & 0x80) ? 1 : 0;
+        block[i] = (block[i] << 1) | overflow;
+        overflow = new_overflow;
+    }
+}
+
+// XOR operation on two blocks
+void xor_blocks(uint8_t *out, const uint8_t *a, const uint8_t *b, size_t block_size) {
+    for (size_t i = 0; i < block_size; i++) {
+        out[i] = a[i] ^ b[i];
+    }
+}
+
+// Generate CMAC subkeys
+void generate_cmac_subkeys(const uint8_t *key, uint8_t *K1, uint8_t *K2) {
+    uint8_t L[BLOCK_SIZE] = {0};
+    uint8_t const_R[BLOCK_SIZE];
+
+    // Encrypt the all-zero block to get L
+    block_cipher_encrypt(key, L, L);
+
+    // Determine the constant based on the block size
+    memcpy(const_R, R_128, BLOCK_SIZE);
+
+    // Generate K1
+    memcpy(K1, L, BLOCK_SIZE);
+    left_shift_block(K1, BLOCK_SIZE);
+    if (L[0] & 0x80) {
+        xor_blocks(K1, K1, const_R, BLOCK_SIZE);
+    }
+
+    // Generate K2
+    memcpy(K2, K1, BLOCK_SIZE);
+    left_shift_block(K2, BLOCK_SIZE);
+    if (K1[0] & 0x80) {
+        xor_blocks(K2, K2, const_R, BLOCK_SIZE);
+    }
+}
+
+int main() {
+    uint8_t key[BLOCK_SIZE] = {0}; // Example key (all zeros)
+    uint8_t K1[BLOCK_SIZE];
+    uint8_t K2[BLOCK_SIZE];
+
+    // Generate the subkeys
+    generate_cmac_subkeys(key, K1, K2);
+
+    // Print the subkeys
+    printf("K1: ");
+    for (int i = 0; i < BLOCK_SIZE; i++) {
+        printf("%02x ", K1[i]);
+    }
+    printf("\n");
+
+    printf("K2: ");
+    for (int i = 0; i < BLOCK_SIZE; i++) {
+        printf("%02x ", K2[i]);
+    }
+    printf("\n");
+
+    return 0;
+}
+Output
+K1: 567D332FV53VXK543945FJ45393343V43V63
+K2:B98DVDS9ED0SFDS9DBFDUKJNJKBHUG9098HBG
