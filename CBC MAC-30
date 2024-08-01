@@ -1,0 +1,69 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
+
+// Example block size and key size (16 bytes for AES)
+#define BLOCK_SIZE 16
+#define KEY_SIZE 16
+
+// XOR function for two blocks
+void xor_blocks(uint8_t *out, const uint8_t *a, const uint8_t *b) {
+    for (int i = 0; i < BLOCK_SIZE; i++) {
+        out[i] = a[i] ^ b[i];
+    }
+}
+
+// Placeholder for a block cipher encryption function (e.g., AES encryption)
+void block_cipher_encrypt(const uint8_t *key, const uint8_t *input, uint8_t *output) {
+    // This is a placeholder function. In practice, you would use a proper AES library.
+    // For this example, we'll simply copy the input to the output.
+    memcpy(output, input, BLOCK_SIZE);
+}
+
+// CBC-MAC computation
+void cbc_mac(const uint8_t *key, const uint8_t *message, uint8_t *mac, size_t message_length) {
+    uint8_t current_block[BLOCK_SIZE] = {0};
+    uint8_t encrypted_block[BLOCK_SIZE];
+
+    for (size_t i = 0; i < message_length; i += BLOCK_SIZE) {
+        xor_blocks(current_block, current_block, message + i);
+        block_cipher_encrypt(key, current_block, encrypted_block);
+        memcpy(current_block, encrypted_block, BLOCK_SIZE);
+    }
+
+    memcpy(mac, current_block, BLOCK_SIZE);
+}
+
+int main() {
+    uint8_t key[KEY_SIZE] = {0}; // Example key (all zeros)
+    uint8_t message[BLOCK_SIZE] = {0}; // Example one-block message (all zeros)
+    uint8_t mac[BLOCK_SIZE];
+    uint8_t message_xor_mac[BLOCK_SIZE];
+    uint8_t two_block_message[2 * BLOCK_SIZE];
+    uint8_t two_block_mac[BLOCK_SIZE];
+
+    // Compute the CBC-MAC for the one-block message
+    cbc_mac(key, message, mac, BLOCK_SIZE);
+    printf("MAC for one-block message: ");
+    for (int i = 0; i < BLOCK_SIZE; i++) {
+        printf("%02x ", mac[i]);
+    }
+    printf("\n");
+
+    // Compute X ? T
+    xor_blocks(message_xor_mac, message, mac);
+
+    // Form the two-block message X || (X ? T)
+    memcpy(two_block_message, message, BLOCK_SIZE);
+    memcpy(two_block_message + BLOCK_SIZE, message_xor_mac, BLOCK_SIZE);
+
+    // Compute the CBC-MAC for the two-block message
+    cbc_mac(key, two_block_message, two_block_mac, 2 * BLOCK_SIZE);
+    printf("MAC for two-block message: ");
+    for (int i = 0; i < BLOCK_SIZE; i++) {
+        printf("%02x ", two_block_mac[i]);
+    }
+    printf("\n");
+
+    return 0;
+}
