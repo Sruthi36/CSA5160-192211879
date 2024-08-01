@@ -1,0 +1,85 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Function to find the modular inverse of a under modulo 26
+int mod_inverse(int a, int m) {
+    a = a % m;
+    for (int x = 1; x < m; x++) {
+        if ((a * x) % m == 1) {
+            return x;
+        }
+    }
+    return -1;
+}
+
+// Function to validate that a and 26 are coprime
+int validate_a(int a) {
+    int temp_a = a, temp_m = 26, t;
+    while (temp_m != 0) {
+        t = temp_m;
+        temp_m = temp_a % temp_m;
+        temp_a = t;
+    }
+    return temp_a == 1;
+}
+
+// Function to encrypt plaintext using the affine Caesar cipher
+void encrypt(const char *plaintext, char *ciphertext, int a, int b) {
+    int length = strlen(plaintext);
+    for (int i = 0; i < length; ++i) {
+        if (plaintext[i] >= 'A' && plaintext[i] <= 'Z') {
+            ciphertext[i] = ((a * (plaintext[i] - 'A') + b) % 26) + 'A';
+        } else {
+            ciphertext[i] = plaintext[i];
+        }
+    }
+    ciphertext[length] = '\0';
+}
+
+// Function to decrypt ciphertext using the affine Caesar cipher
+void decrypt(const char *ciphertext, char *plaintext, int a, int b) {
+    int length = strlen(ciphertext);
+    int a_inv = mod_inverse(a, 26);
+    for (int i = 0; i < length; ++i) {
+        if (ciphertext[i] >= 'A' && ciphertext[i] <= 'Z') {
+            plaintext[i] = (a_inv * ((ciphertext[i] - 'A') - b + 26) % 26) + 'A';
+        } else {
+            plaintext[i] = ciphertext[i];
+        }
+    }
+    plaintext[length] = '\0';
+}
+
+int main() {
+    int a = 5;  // Should be coprime with 26
+    int b = 8;  // Any integer value
+
+    if (!validate_a(a)) {
+        printf("Invalid value of 'a'. It must be coprime with 26.\n");
+        return 1;
+    }
+
+    const char *original_plaintext = "HELLO";
+    int length = strlen(original_plaintext);
+
+    char ciphertext[length + 1];
+    char decrypted_text[length + 1];
+
+    // Encrypt the plaintext
+    encrypt(original_plaintext, ciphertext, a, b);
+
+    // Decrypt the ciphertext
+    decrypt(ciphertext, decrypted_text, a, b);
+
+    // Print results
+    printf("Original Plaintext: %s\n", original_plaintext);
+    printf("Ciphertext: %s\n", ciphertext);
+    printf("Decrypted Text: %s\n", decrypted_text);
+
+    return 0;
+}
+output
+Original Plaintext: HELLO
+Ciphertext: RCLLA
+Decrypted Text: HELLO
